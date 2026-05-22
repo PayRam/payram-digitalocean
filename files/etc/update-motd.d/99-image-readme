@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+ENV_FILE=/root/payram/payram.env
+IPV4="$(curl -s --max-time 2 http://169.254.169.254/metadata/v1/interfaces/public/0/ipv4/address || echo "<your-droplet-ip>")"
+
+cat <<'BANNER'
+========================================================================
+  Payram — DigitalOcean 1-Click App
+========================================================================
+BANNER
+
+if [ -f "$ENV_FILE" ]; then
+  # shellcheck disable=SC1090
+  source "$ENV_FILE"
+  cat <<EOF
+  Status:           $(systemctl is-active payram.service 2>/dev/null || echo unknown)
+
+  Frontend (UI):    http://${IPV4}        (port 80)
+  Backend  (API):   http://${IPV4}:8080   (port 8080)
+  HTTPS variants:   https://${IPV4}       https://${IPV4}:8443
+                    (bring your own TLS certs)
+
+  Postgres host:    ${POSTGRES_HOST}
+  Postgres db:      ${POSTGRES_DATABASE}
+  Postgres user:    ${POSTGRES_USERNAME}
+  Postgres pass:    ${POSTGRES_PASSWORD}
+
+  Config file:      ${ENV_FILE}
+  Data dir:         /root/payram
+  Logs:             payram-logs        (tail container logs)
+  Status:           payram-status      (health check)
+  External DB:      payram-use-external-db --help
+
+  Docs:             https://docs.payram.com
+========================================================================
+EOF
+else
+  echo "  First-boot still in progress. Run: tail -f /var/log/payram-first-boot.log"
+  echo "========================================================================"
+fi

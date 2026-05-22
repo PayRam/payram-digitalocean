@@ -1,0 +1,21 @@
+# Secrets / local env
+.env
+.env.*
+*.token
+*_token
+secrets/
+packer_cache/
+
+# Local helper outputs
+packer-build.log
+*.log
+
+# macOS / editor cruft
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Claude harness state (do not push)
+.claude/

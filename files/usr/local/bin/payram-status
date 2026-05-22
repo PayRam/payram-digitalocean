@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+echo "--- systemd ---"
+systemctl is-active payram.service && systemctl status payram.service --no-pager -n 5 || true
+echo
+echo "--- docker ---"
+docker ps --filter name=payram-mainnet --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+echo
+echo "--- ports listening ---"
+ss -tlnp 2>/dev/null | grep -E ':(80|443|8080|8443|5432)\b' || true

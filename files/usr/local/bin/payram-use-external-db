@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ENV_FILE=/root/payram/payram.env
+
+usage() {
+  cat <<EOF
+Switch Payram to an external Postgres (e.g. DigitalOcean Managed Database).
+
+Usage:
+  payram-use-external-db --host HOST --port PORT --database DB \\
+                         --username USER --password PASS [--sslmode MODE]
+
+  payram-use-external-db --revert     # switch back to embedded Postgres
+
+Options:
+  --sslmode      prefer | require | disable   (default: require)
+  --skip-check   skip pre-flight DB connectivity/credential validation
+  --revert       restore embedded Postgres (localhost) settings
+  -h, --help     show this message
+
+Behavior:
+  1. Validates that the external Postgres is reachable AND credentials work
+     (uses pg_isready + psql). Aborts without touching config if either fails.
+  2. Writes the new values to $ENV_FILE.
+  3. Restarts payram.service. systemd will block startup until the DB is
+     reachable (see /usr/local/bin/payram-wait-for-db).
+EOF
+}
+
+if [ $# -eq 0 ]; then usage; exit 1; fi
+
+REVERT=0
+SKIP_CHECK=0
+SSLMODE=require
+HOST=""; PORT=""; DB=""; USER=""; PASS=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --host) HOST="$2"; shift 2;;
+    --port) PORT="$2"; shift 2;;
+    --database) DB="$2"; shift 2;;
+    --username) USER="$2"; shift 2;;
+    --password) PASS="$2"; shift 2;;
+    --sslmode) SSLMODE="$2"; shift 2;;
+    --skip-check) SKIP_CHECK=1; shift;;
+    --revert) REVERT=1; shift;;
+    -h|--help) usage; exit 0;;
+    *) echo "Unknown arg: $1"; usage; exit 1;;
+  esac
+done
+
+if [ ! -f "$ENV_FILE" ]; then
+  echo "ERROR: $ENV_FILE not found. Has first-boot finished?"
+  exit 1
+fi
+
+set_var() {
+  local key="$1" val="$2"
+  if grep -q "^${key}=" "$ENV_FILE"; then
+    sed -i "s|^${key}=.*|${key}=${val}|" "$ENV_FILE"
+  else
+    echo "${key}=${val}" >> "$ENV_FILE"
+  fi
+}
+
+if [ "$REVERT" -eq 1 ]; then
+  echo "Reverting to embedded Postgres..."
+  set_var POSTGRES_HOST localhost
+  set_var POSTGRES_PORT 5432
+  set_var POSTGRES_DATABASE payram
+  set_var POSTGRES_USERNAME payram
+  set_var POSTGRES_SSLMODE prefer
+  echo "Note: POSTGRES_PASSWORD left unchanged. Edit $ENV_FILE to reset it."
+  systemctl restart payram.service
+  echo "Done. Check 'payram-status' in ~30s."
+  exit 0
+fi
+
+for v in HOST PORT DB USER PASS; do
+  if [ -z "${!v}" ]; then echo "Missing --${v,,}"; usage; exit 1; fi
+done
+
+if [ "$SKIP_CHECK" -eq 0 ]; then
+  echo "Step 1/3: Checking TCP reachability of ${HOST}:${PORT}..."
+  if ! pg_isready -h "$HOST" -p "$PORT" -t 10 >/dev/null 2>&1; then
+    echo "ERROR: Cannot reach Postgres at ${HOST}:${PORT}."
+    echo "       Check firewall / trusted sources / hostname. Use --skip-check to bypass."
+    exit 2
+  fi
+  echo "  OK — port reachable."
+
+  echo "Step 2/3: Validating credentials against database '${DB}'..."
+  if ! PGPASSWORD="$PASS" psql \
+        "host=${HOST} port=${PORT} dbname=${DB} user=${USER} sslmode=${SSLMODE} connect_timeout=10" \
+        -c "SELECT 1;" >/dev/null 2>&1; then
+    echo "ERROR: Could not authenticate to ${DB} as ${USER}."
+    echo "       Verify username/password/database name. Use --skip-check to bypass."
+    exit 3
+  fi
+  echo "  OK — credentials valid."
+else
+  echo "Skipping pre-flight checks (--skip-check)."
+fi
+
+echo "Step 3/3: Writing config and restarting Payram..."
+set_var POSTGRES_HOST "$HOST"
+set_var POSTGRES_PORT "$PORT"
+set_var POSTGRES_DATABASE "$DB"
+set_var POSTGRES_USERNAME "$USER"
+set_var POSTGRES_PASSWORD "$PASS"
+set_var POSTGRES_SSLMODE "$SSLMODE"
+
+systemctl restart payram.service
+echo "Done. Check 'payram-status' in ~30s."

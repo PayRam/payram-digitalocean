@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Block until the configured Postgres is reachable, or timeout.
+# Reads /root/payram/payram.env. Embedded Postgres (localhost) is started by
+# the Payram container itself, so this only enforces a wait for EXTERNAL DBs.
+set -euo pipefail
+
+ENV_FILE=/root/payram/payram.env
+TIMEOUT="${1:-90}"   # seconds
+
+# shellcheck disable=SC1090
+source "$ENV_FILE"
+
+# Embedded Postgres runs INSIDE the Payram container — nothing to wait for here,
+# the container handles its own startup ordering.
+if [ "${POSTGRES_HOST}" = "localhost" ] || [ "${POSTGRES_HOST}" = "127.0.0.1" ]; then
+  echo "Embedded Postgres in use — no external wait needed."
+  exit 0
+fi
+
+echo "Waiting up to ${TIMEOUT}s for Postgres at ${POSTGRES_HOST}:${POSTGRES_PORT}..."
+end=$(( $(date +%s) + TIMEOUT ))
+
+while [ "$(date +%s)" -lt "$end" ]; do
+  if PGPASSWORD="${POSTGRES_PASSWORD}" pg_isready \
+       -h "${POSTGRES_HOST}" -p "${POSTGRES_PORT}" \
+       -U "${POSTGRES_USERNAME}" -d "${POSTGRES_DATABASE}" \
+       -t 5 >/dev/null 2>&1; then
+    echo "Postgres is ready."
+    exit 0
+  fi
+  sleep 3
+done
+
+echo "ERROR: Postgres at ${POSTGRES_HOST}:${POSTGRES_PORT} did not become ready within ${TIMEOUT}s." >&2
+exit 1

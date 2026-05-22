@@ -1,0 +1,38 @@
+{
+  "variables": {
+    "token": "{{env `DIGITALOCEAN_TOKEN`}}",
+    "image_name": "payram-snapshot-{{timestamp}}",
+    "apt_packages": "ca-certificates curl gnupg lsb-release ufw jq postgresql-client netcat-openbsd"
+  },
+  "sensitive-variables": ["token"],
+  "builders": [
+    {
+      "type": "digitalocean",
+      "api_token": "{{user `token`}}",
+      "image": "ubuntu-24-04-x64",
+      "region": "nyc3",
+      "size": "s-1vcpu-1gb",
+      "ssh_username": "root",
+      "snapshot_name": "{{user `image_name`}}",
+      "droplet_name": "payram-build-{{timestamp}}",
+      "tags": ["payram", "marketplace-build"]
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "files/",
+      "destination": "/"
+    },
+    {
+      "type": "shell",
+      "environment_vars": ["DEBIAN_FRONTEND=noninteractive", "APT_PACKAGES={{user `apt_packages`}}"],
+      "scripts": [
+        "scripts/install-docker.sh",
+        "scripts/payram-prep.sh",
+        "scripts/cleanup.sh",
+        "scripts/img-check.sh"
+      ]
+    }
+  ]
+}
