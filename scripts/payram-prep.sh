@@ -31,6 +31,9 @@ chmod +x /opt/payram/welcome.sh
 chmod +x /var/lib/cloud/scripts/per-instance/001-payram-first-boot.sh
 chmod +x /etc/update-motd.d/99-image-readme
 
+echo "[payram-build] Wiring first-login welcome banner into root .bashrc..."
+grep -qxF '/opt/payram/welcome.sh' /root/.bashrc 2>/dev/null || echo '/opt/payram/welcome.sh' >> /root/.bashrc
+
 echo "[payram-build] Pre-pulling Payram Docker image (best-effort — first boot will refresh)..."
 docker pull payramapp/payram:latest || echo "[payram-build] Pre-pull failed, first-boot will retry."
 

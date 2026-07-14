@@ -54,4 +54,12 @@ rm -rf /var/lib/cloud/instances/*
 rm -rf /var/lib/cloud/sem/*
 rm -f /var/log/cloud-init.log /var/log/cloud-init-output.log
 
+# --- Zero out free disk space so the snapshot doesn't retain stale data in
+#     unallocated blocks and compresses smaller. Matches DO's reference
+#     90-cleanup.sh. Expected to end with "No space left on device".
+echo "[payram-build] Zeroing free disk space (may take a few minutes)..."
+dd if=/dev/zero of=/zerofile bs=4M || true
+rm -f /zerofile
+sync
+
 echo "[payram-build] Cleanup complete."
