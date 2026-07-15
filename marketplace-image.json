@@ -1,7 +1,7 @@
 {
   "variables": {
     "token": "{{env `DIGITALOCEAN_TOKEN`}}",
-    "image_name": "payram-snapshot-{{timestamp}}",
+    "image_name": "payram:v1",
     "apt_packages": "ca-certificates curl gnupg lsb-release ufw jq postgresql-client netcat-openbsd"
   },
   "sensitive-variables": ["token"],
@@ -14,6 +14,7 @@
       "size": "s-1vcpu-1gb",
       "ssh_username": "root",
       "snapshot_name": "{{user `image_name`}}",
+      "snapshot_regions": ["nyc1", "nyc2", "ams3", "sfo2", "sfo3", "sgp1", "lon1", "fra1", "tor1", "blr1", "syd1"],
       "droplet_name": "payram-build-{{timestamp}}",
       "tags": ["payram", "marketplace-build"]
     }
