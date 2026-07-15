@@ -17,11 +17,8 @@ ExecStartPre=/usr/local/bin/payram-wait-for-db 90
 
 ExecStart=/usr/bin/docker run --rm \
   --name payram-mainnet \
-  --publish 8080:8080 \
-  --publish 8443:8443 \
   --publish 80:80 \
-  --publish 443:443 \
-  --publish 127.0.0.1:5432:5432 \
+  --publish 5432:5432 \
   -e AES_KEY=${AES_KEY} \
   -e SSL_CERT_PATH= \
   -e BLOCKCHAIN_NETWORK_TYPE=mainnet \

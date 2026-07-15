@@ -15,14 +15,12 @@ if [ -f "$ENV_FILE" ]; then
   Status:           $(systemctl is-active payram.service 2>/dev/null || echo unknown)
 
   Frontend (UI):    http://${IPV4}        (port 80)
-  Backend  (API):   http://${IPV4}:8080   (port 8080)
-  HTTPS variants:   https://${IPV4}       https://${IPV4}:8443
-                    (bring your own TLS certs)
 
   Postgres host:    ${POSTGRES_HOST}
   Postgres db:      ${POSTGRES_DATABASE}
   Postgres user:    ${POSTGRES_USERNAME}
   Postgres pass:    ${POSTGRES_PASSWORD}
+  Postgres port:    5432 (public — reachable from the internet, not firewalled)
 
   Config file:      ${ENV_FILE}
   Data dir:         /root/payram

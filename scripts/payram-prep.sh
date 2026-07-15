@@ -11,10 +11,7 @@ ufw default deny incoming
 ufw default allow outgoing
 ufw allow 22/tcp
 ufw allow 80/tcp
-ufw allow 443/tcp
-ufw allow 8080/tcp
-ufw allow 8443/tcp
-# Postgres (5432) is intentionally NOT opened — embedded DB stays on localhost.
+ufw allow 5432/tcp
 ufw --force enable
 
 echo "[payram-build] Enabling systemd service for Payram (will start on first boot)..."
