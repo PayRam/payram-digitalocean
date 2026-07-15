@@ -1,7 +1,7 @@
 {
   "variables": {
     "token": "{{env `DIGITALOCEAN_TOKEN`}}",
-    "image_name": "payram:v1",
+    "image_name": "payram:v1.0.0",
     "apt_packages": "ca-certificates curl gnupg lsb-release ufw jq postgresql-client netcat-openbsd"
   },
   "sensitive-variables": ["token"],
