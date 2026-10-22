@@ -19,8 +19,8 @@ if [ -f "$ENV_FILE" ]; then
   Postgres host:    ${POSTGRES_HOST}
   Postgres db:      ${POSTGRES_DATABASE}
   Postgres user:    ${POSTGRES_USERNAME}
-  Postgres pass:    ${POSTGRES_PASSWORD}
-  Postgres port:    5432 (public — reachable from the internet, not firewalled)
+  Postgres pass:    in ${ENV_FILE}
+  Postgres access:  inside the container only (docker exec payram-mainnet psql -U payram payram)
 
   Config file:      ${ENV_FILE}
   Data dir:         /root/payram
