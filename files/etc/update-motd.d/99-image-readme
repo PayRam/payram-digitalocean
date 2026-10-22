@@ -11,6 +11,11 @@ BANNER
 if [ -f "$ENV_FILE" ]; then
   # shellcheck disable=SC1090
   source "$ENV_FILE"
+  if [ "${POSTGRES_HOST}" = "localhost" ] || [ "${POSTGRES_HOST}" = "127.0.0.1" ]; then
+    DB_ACCESS="inside the container only (docker exec -it payram-mainnet psql -U payram payram)"
+  else
+    DB_ACCESS="external database at ${POSTGRES_HOST}"
+  fi
   cat <<EOF
   Status:           $(systemctl is-active payram.service 2>/dev/null || echo unknown)
 
@@ -20,7 +25,7 @@ if [ -f "$ENV_FILE" ]; then
   Postgres db:      ${POSTGRES_DATABASE}
   Postgres user:    ${POSTGRES_USERNAME}
   Postgres pass:    in ${ENV_FILE}
-  Postgres access:  inside the container only (docker exec payram-mainnet psql -U payram payram)
+  Postgres access:  ${DB_ACCESS}
 
   Config file:      ${ENV_FILE}
   Data dir:         /root/payram

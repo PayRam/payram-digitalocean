@@ -20,6 +20,26 @@ systemctl daemon-reload && systemctl restart payram
 ```
 
 Payram itself, `payram-status` and backups through `docker exec` keep
-working; only outside access to the database stops. Current Payram images
-also make the embedded Postgres listen only inside the container, so a
-droplet that pulls a new image is closed even before this change.
+working; only outside access to the database stops. Payram images released
+after this fix also make the embedded Postgres listen only inside the
+container; on those, `docker pull payramapp/payram:latest && systemctl
+restart payram` closes it too. Droplets do not pull new images by
+themselves.
+
+### After the port was open
+
+Anyone who reached port 5432 could read and change the payments database,
+and Postgres keeps no record of who logged in. On a droplet that had it
+open, check in the dashboard:
+
+- **Members:** nobody you don't know, and no role was raised.
+- **API keys:** revoke every key and create new ones for your integrations.
+- **Payout recipients, cold wallet and fund-collector addresses:** each is
+  an address you chose. Swept funds and payouts go to them.
+- **Webhooks:** every URL is yours.
+- **RPC nodes:** only providers you set. A node you don't control can
+  report deposits that never happened.
+- **Payout limits and auto-approve:** as you set them.
+
+Then have every member change their password. Customer data (emails,
+payment history) may have been read.
