@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Wait for cloud-init / unattended-upgrades to release the dpkg lock before
-# touching apt — Ubuntu 24.04 base images run background package updates on
+# touching apt — Ubuntu cloud images run background package updates on
 # first boot, and racing them causes "Could not get lock" errors.
 wait_for_apt() {
   echo "[payram-build] Waiting for apt locks to be released..."
